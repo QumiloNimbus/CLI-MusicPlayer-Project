@@ -1,148 +1,46 @@
 
-
-
 import blessed from 'blessed';
+import contrib from 'blessed-contrib';
 import chalk from 'chalk';
-import {readdir} from 'fs/promises';
+import NodeID3 from 'node-id3';
 import {audioEvents, convertMP3toPCM} from './music.js'
 import os from 'os';
 import path from 'path';
-let musicFolder=path.join(os.userInfo().homedir,'Music');
-let musicFiles='';
+import {screen,menu,box2,table,label,progressBar} from './widgets.js'
+// let musicFolder=path.join(os.userInfo().homedir,'Music');
+import { listMusicFiles, musicFolder,makeTableLists } from './music.js';
 
-async function listMusicFiles(){
-  try {
-      musicFiles= await readdir(musicFolder);
-      musicFiles.forEach((file)=>file=chalk.bgCyan(file))
-      console.log(musicFiles)
-    } catch (err) {
-      console.error(err);
-    } 
+
+
+async function app(){
+  try{
+    let musicFiles=await listMusicFiles();
+    let tableLists=makeTableLists(musicFiles);
     
-    interfaceStuff()
-}
+    table.setData({headers: ['Title', 'Artist', 'Album'],
+                  data:tableLists})
+    // console.log(musicFiles)
+    // tableLists.forEach((file)=>menu.addItem(file))
+    menu.addItem('exit')
+    interfaceStuff();
+    // console.log(menu)
+  }
+ catch(err){
+    console.log(err)
+  }
+ } 
 
-console.log(musicFolder)
+
 // Create a screen object.
 
 
 // Create a box perfectly centered horizontally and vertically.
 function interfaceStuff(){
-    let screen = blessed.screen({
-    smartCSR: true,
-    fullUnicode: true,
-    terminal: 'xterm-256color'
-  });
-  
-  screen.title = 'my window title';
-    let box1 = blessed.box({
-    top: '0',
-    right: '0',
-    width: '75%',
-    height: '75%',
-    content: '',
-    tags: true,
-    border: {
-      type: 'line'
-    },
-    style: {
-      fg: 'white',
-      bg: 'red',
-      border: {
-        fg: '#f0f0f0'
-      },
-      hover: {
-        bg: 'green'
-      }
-    }
-  });
-
-  let box2= blessed.box({
-    bottom: '0',
-    right: '0',
-    width: '75%',
-    height: '30%',
-    tags: true,
-    border: {
-      type: 'line'
-    },
-    style: {
-      fg: 'white',
-      bg: 'red',
-      border: {
-        fg: '#f0f0f0'
-      },
-      hover: {
-        bg: 'green'
-      }
-    }
-  });
-  
-  let menu=blessed.list({
-    items:[...musicFiles,"exit"],
-    // items:[chalk.bgRed("hello")],
-    title:'Menu',
-    top:'0',
-    left:'0',
-    width: '25%',
-    height: '100%',
-    keys: true,
-    vi: true,
-    mouse: true,
-    border: {
-      type: 'line'
-    },
-    style: {
-      fg: 'black',
-      bg: '#4287f5',
-      selected:{bg:'red'}, 
-      border: {
-        fg: '#f0f0f0'
-      }
-    }
-
-  })
-
-
-  let progressBar=blessed.progressbar({
-    parent:box2,
-    border:'line',
-    filled:0,
-    // value:0,
-    orientation:'horizontal',
-    width: '90%',
-    height: 3,
-    top:'center',
-    left:'center',
-    keys:true,
-    mouse:true,
-    style:{
-      fg:'black',
-      bg:'white',
-      bar:{
-      bg:'black'
-      },
-      border:{
-        fg:'yellow',
-        bg:'white',
-        padding:0
-      }
-    },
-    ch:'',
-    content:'0%'
     
-  })
 
-let label = blessed.Text({
-  parent: progressBar,
-  top: 'center-3',
-  left: 'center',
-  content: 'Elapsed: 00:00 / 00:00', // Placeholder
-  align: 'center',
-});
-
-
-
+  screen.render()
+  //table here
+   //allow control the table with the keyboard
 
       let progressValue;
   audioEvents
@@ -160,7 +58,7 @@ let label = blessed.Text({
   // Append our box to the screen.
 
   screen.append(menu);
-  screen.append(box1);
+  screen.append(table);
   screen.append(box2);
   
   // Add a png icon to the box
@@ -175,7 +73,20 @@ let label = blessed.Text({
     convertMP3toPCM(path.join(musicFolder,choice))
   }
 })
-
+  // If our box is clicked, change the content.
+  // box.on('click', function(data) {
+  //   box.setContent('{center}Some different {red-fg}content{/red-fg}.{/center}');
+  //   screen.render();
+  // });
+  
+  // If box is focused, handle `enter`/`return` and give us some more content.
+  // box.key('enter', function(ch, key) {
+  //   box.setContent('{right}Even different {black-fg}content{/black-fg}.{/right}\n');
+  //   box.setLine(1, 'bar');
+  //   box.insertLine(1, 'foo');
+  //   screen.render();
+  // });
+  
   // Quit on Escape, q, or Control-C.
   screen.key(['escape', 'q', 'C-c'], function(ch, key) {
     return process.exit(0);
@@ -184,15 +95,49 @@ let label = blessed.Text({
   
   // Focus our element.
   menu.focus();
+  table.focus()
   
-  
-  // Render the screen.
-  // screen.noEcho();
   screen.render();
   
 }
 
+app();
 
-listMusicFiles();
+//  table.rows.on('select',(e)=>{
+  
+//   const choice = e.content;
+//   console.log(e)
+  // if (choice === 'exit') {
+  //   return process.exit(0);
+  // }else{
+  //   convertMP3toPCM(path.join(musicFolder,choice))
+  // }
+// })
 
+table.rows.on('select', (item, index) => {
+  const rowIndex = index; // subtract header row
+  const row = table.rows.items[rowIndex].content.trim().split(/\s{2,}/); // split by 2+ spaces
+
+  const [title, artist, album] = row;
+
+  // console.log('Selected row:', { title, artist, album });
+    if (item === 'exit') {
+    return process.exit(0);
+  }else{
+    musicCheckTemp(title);
+    
+  }
+});
+
+async function musicCheckTemp(title){
+  let musicFile=await listMusicFiles();
+
+      musicFile.forEach((file)=>{
+        const tags = NodeID3.read(file)
+      if(tags.title===title){
+        convertMP3toPCM(file)
+      }
+      })
+    
+  }
 
