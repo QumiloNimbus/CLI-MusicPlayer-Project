@@ -8,70 +8,62 @@ import os from 'os';
 import path from 'path';
 import {screen,menu,box2,table,label,progressBar} from './widgets.js'
 // let musicFolder=path.join(os.userInfo().homedir,'Music');
-import { listMusicFiles, musicFolder,makeTableLists } from './music.js';
+import { getMusicFilePath, musicFolder,makeTableRow, getMusicFilesDataArray } from './music.js';
+import { exec } from 'child_process';
 
-
+let musicFilesPath;
 
 async function app(){
+  musicFilesPath= await getMusicFilePath();
   try{
-    let musicFiles=await listMusicFiles();
-    let tableLists=makeTableLists(musicFiles);
     
-    table.setData({headers: ['Title', 'Artist', 'Album'],
-                  data:tableLists})
-    // console.log(musicFiles)
-    // tableLists.forEach((file)=>menu.addItem(file))
-    menu.addItem('exit')
+    addRowToTable();
+    
     interfaceStuff();
-    // console.log(menu)
+    
   }
  catch(err){
     console.log(err)
   }
  } 
 
-
-// Create a screen object.
-
-
-// Create a box perfectly centered horizontally and vertically.
 function interfaceStuff(){
     
 
   screen.render()
-  //table here
-   //allow control the table with the keyboard
 
-      let progressValue;
-  audioEvents
-  .on('progress', ({ percent, time }) => {
-    // console.log(`Elapsed: ${formatted} (${elapsed.toFixed(1)}s)`);
+// code for the progress bar takes 
+  let progressValue;
+
+  audioEvents.on('progress', ({ percent, time }) => {
     progressValue=Number(percent.toFixed(2));
-    // console.log(progressValue)
-    // progressBar.filled=progressValue;
+
     label.content=`TimeElapsed: ${time[0]}:${time[1]}`
     progressBar.setProgress(progressValue)
     progressBar.content=`${progressValue}%`
     screen.render()
   })
 
-  // Append our box to the screen.
+  // Appending the elements to the screen
 
   screen.append(menu);
   screen.append(table);
   screen.append(box2);
   
-  // Add a png icon to the box
 
   //menu events
   menu.on('select',(e)=>{
   
   const choice = e.getText();
-  if (choice === 'exit') {
+
+  if (choice === 'Exit') {
     return process.exit(0);
-  }else{
-    convertMP3toPCM(path.join(musicFolder,choice))
+  }else if(choice==='Detect'){
+      exec('mv /home/nimbus/Downloads/*mp3 /home/nimbus/Music')
+      addRowToTable();
+
   }
+  screen.render();
 })
   // If our box is clicked, change the content.
   // box.on('click', function(data) {
@@ -95,49 +87,43 @@ function interfaceStuff(){
   
   // Focus our element.
   menu.focus();
+  progressBar.focus();
   table.focus()
-  
   screen.render();
   
 }
 
 app();
 
-//  table.rows.on('select',(e)=>{
-  
-//   const choice = e.content;
-//   console.log(e)
-  // if (choice === 'exit') {
-  //   return process.exit(0);
-  // }else{
-  //   convertMP3toPCM(path.join(musicFolder,choice))
-  // }
-// })
-
 table.rows.on('select', (item, index) => {
   const rowIndex = index; // subtract header row
   const row = table.rows.items[rowIndex].content.trim().split(/\s{2,}/); // split by 2+ spaces
 
-  const [title, artist, album] = row;
+  const [no,title, artist, album] = row;
 
   // console.log('Selected row:', { title, artist, album });
     if (item === 'exit') {
     return process.exit(0);
   }else{
-    musicCheckTemp(title);
+    convertMP3toPCM(musicFilesPath[index])
+    
     
   }
 });
 
-async function musicCheckTemp(title){
-  let musicFile=await listMusicFiles();
 
-      musicFile.forEach((file)=>{
-        const tags = NodeID3.read(file)
-      if(tags.title===title){
-        convertMP3toPCM(file)
-      }
-      })
+//Note to self: a better way to do this would be to have a list of path to all the music files
+// and then compare the number of the selected option to the array and then send that file path to the playback function
+async function addRowToTable(){
+  let musicFilesDataArray= getMusicFilesDataArray(musicFilesPath);
+  
+    //tableLists [[no,title,artist,album]]
+    let tableRowArray=makeTableRow(musicFilesDataArray);
+ 
+    table.setData({headers: ['No','Title', 'Artist', 'Album'],
+                  data:tableRowArray})
     
-  }
+    
+    screen.render();
+}
 

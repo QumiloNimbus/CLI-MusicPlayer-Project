@@ -1,7 +1,7 @@
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
 import { title } from 'process';
-
+import chalk from 'chalk';
 
 
 const green='#86f760';
@@ -17,28 +17,28 @@ export let screen = blessed.screen({
     terminal: 'xterm-256color'
   });
   
-  screen.title = 'my window title';
-    let box1 = blessed.box({
-    top: '0',
-    right: '0',
-    width: '75%',
-    height: '75%',
-    content: '',
-    tags: true,
-    border: {
-      type: 'line'
-    },
-    style: {
-      fg: 'white',
-      bg: 'red',
-      border: {
-        fg: '#f0f0f0'
-      },
-      hover: {
-        bg: 'green'
-      }
-    }
-  });
+  screen.title = 'Termuse';
+  //   let box1 = blessed.box({
+  //   top: '0',
+  //   right: '0',
+  //   width: '75%',
+  //   height: '75%',
+  //   content: '',
+  //   tags: true,
+  //   border: {
+  //     type: 'line'
+  //   },
+  //   style: {
+  //     fg: 'white',
+  //     bg: 'red',
+  //     border: {
+  //       fg: '#f0f0f0'
+  //     },
+  //     hover: {
+  //       bg: 'green'
+  //     }
+  //   }
+  // });
 
 
 
@@ -76,6 +76,7 @@ export  let menu=blessed.list({
       vi: true,
       mouse: true,
       padding:1,
+      items:['Detect','Exit'],
       border: {
         type: 'line'
       },
@@ -104,13 +105,19 @@ export let table = contrib.table(
      , selectedFg: 'black'
      , selectedBg: lightPurple
      , interactive: true
-     , label: 'Songs'
+     , label: 'Songs',
+     style:{
+      label:{
+        fg:purple
+      }
+     }
      , width: '80%'
-     , height: '75%'
+     , height: '70%'
      , border: {type: "line", fg: purple}
-     , columnSpacing: 10 //in chars
-     , columnWidth: [35, 35, 35] /*in chars*/ },
+     , columnSpacing: 5 //in chars
+     , columnWidth: [3,35, 30, 20] /*in chars*/ },
     )
+
 
 
   //    table.setData(
@@ -145,7 +152,7 @@ export let progressBar=blessed.progressbar({
       }
     },
     ch:'',
-    content:'0%'
+    // content:this.fill
     
   })
 
