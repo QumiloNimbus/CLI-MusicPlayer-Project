@@ -3,18 +3,22 @@ import blessed from 'blessed';
 import contrib from 'blessed-contrib';
 import chalk from 'chalk';
 import NodeID3 from 'node-id3';
-import {audioEvents, convertMP3toPCM} from './music.js'
+import {audioEvents,songEndEmitter, convertMP3toPCM,} from './music.js'
 import os from 'os';
-import path from 'path';
-import {screen,menu,box2,table,label,progressBar} from './widgets.js'
+import path, { relative } from 'path';
+import {screen,menu,box2,table,label,progressBar,albumCover} from './widgets.js'
 // let musicFolder=path.join(os.userInfo().homedir,'Music');
 import { getMusicFilePath, musicFolder,makeTableRow, getMusicFilesDataArray } from './music.js';
 import { exec } from 'child_process';
+import { savePNG } from './imageRender.js';
 
 let musicFilesPath;
-
+// let musicFilesDataArray=getMusicFilesDataArray()
+let currentlyPlaying;
+let musicFilesDataArray;
 async function app(){
   musicFilesPath= await getMusicFilePath();
+  musicFilesDataArray=await getMusicFilesDataArray(musicFilesPath)
   try{
     
     addRowToTable();
@@ -36,14 +40,30 @@ function interfaceStuff(){
   let progressValue;
 
   audioEvents.on('progress', ({ percent, time }) => {
-    progressValue=Number(percent.toFixed(2));
-
-    label.content=`TimeElapsed: ${time[0]}:${time[1]}`
+    // progressValue=Number(percent.toFixed(2));
+    let songTime=musicFilesDataArray[currentlyPlaying]
+    songTime=songTime[songTime.length-3]
+    songTime=Number(songTime)
+    // console.log(time)
+    progressValue=time/(songTime/1000)*100
+// console.log(songTime)
+    // label.content=`TimeElapsed: ${time[0]}:${time[1]}`
     progressBar.setProgress(progressValue)
-    progressBar.content=`${progressValue}%`
+    progressBar.content=`${time}`
     screen.render()
   })
 
+  audioEvents.on('ended',()=>{
+    
+    if(currentlyPlaying===musicFilesDataArray.length-1){
+      currentlyPlaying=0;
+    }else{
+      currentlyPlaying++;
+    }
+    
+    convertMP3toPCM(musicFilesPath[currentlyPlaying])
+    thingsToDoWhenMusicChanges()
+  })
   // Appending the elements to the screen
 
   screen.append(menu);
@@ -85,6 +105,7 @@ function interfaceStuff(){
     
   });
   
+  
   // Focus our element.
   menu.focus();
   progressBar.focus();
@@ -95,19 +116,19 @@ function interfaceStuff(){
 
 app();
 
-table.rows.on('select', (item, index) => {
-  const rowIndex = index; // subtract header row
-  const row = table.rows.items[rowIndex].content.trim().split(/\s{2,}/); // split by 2+ spaces
-
-  const [no,title, artist, album] = row;
+table.rows.on('select', async (item, index) => {
+  const rowIndex = index;
 
   // console.log('Selected row:', { title, artist, album });
     if (item === 'exit') {
     return process.exit(0);
   }else{
-    convertMP3toPCM(musicFilesPath[index])
+    convertMP3toPCM(musicFilesPath[index],)
+    currentlyPlaying=index;
+    //album
     
-    
+    await thingsToDoWhenMusicChanges()
+    screen.render()
   }
 });
 
@@ -115,7 +136,7 @@ table.rows.on('select', (item, index) => {
 //Note to self: a better way to do this would be to have a list of path to all the music files
 // and then compare the number of the selected option to the array and then send that file path to the playback function
 async function addRowToTable(){
-  let musicFilesDataArray= getMusicFilesDataArray(musicFilesPath);
+  let musicFilesDataArray= await getMusicFilesDataArray(musicFilesPath);
   
     //tableLists [[no,title,artist,album]]
     let tableRowArray=makeTableRow(musicFilesDataArray);
@@ -123,7 +144,39 @@ async function addRowToTable(){
     table.setData({headers: ['No','Title', 'Artist', 'Album'],
                   data:tableRowArray})
     
-    
+
     screen.render();
 }
 
+progressBar.on('click', (data) => {
+  
+  let currentSongRow=musicFilesDataArray[currentlyPlaying]
+  let totalDurationInSeconds=currentSongRow[currentSongRow.length-3]/1000
+  const relativePosition = data.x-65
+  // console.log(relativePosition)
+   // progressBar.width;
+  const newTime = (relativePosition/100 * totalDurationInSeconds)
+  // menu.addItem(String(totalDurationInSeconds))
+  
+  convertMP3toPCM(musicFilesPath[currentlyPlaying], newTime);
+  screen.render()
+  // console.log(currentSongRow)
+});
+
+
+async function renderAlbumCover(imageBuffer){
+  let image=await savePNG(imageBuffer)
+  // console.log(image)
+  if(image===undefined){
+    albumCover.setImage('./Pictures/2.png')
+  }else{
+    albumCover.setImage(image)
+  }
+  image=null;
+  screen.render()
+}   
+
+async function thingsToDoWhenMusicChanges(){
+    label.setLabel(`Now Playing: ${musicFilesDataArray[currentlyPlaying][1]} - ${musicFilesDataArray[currentlyPlaying][2]}`)
+    await renderAlbumCover(musicFilesDataArray[currentlyPlaying][musicFilesDataArray[currentlyPlaying].length-1])
+}
