@@ -114,8 +114,8 @@ export let table = contrib.table(
      , width: '80%'
      , height: '70%'
      , border: {type: "line", fg: purple}
-     , columnSpacing: 5 //in chars
-     , columnWidth: [3,35, 30, 20] /*in chars*/ },
+     , columnSpacing: 15 //in chars
+     , columnWidth: [3,35, 30, 30] /*in chars*/ },
     )
 
 
@@ -127,40 +127,64 @@ export let table = contrib.table(
 
 export let progressBar=blessed.progressbar({
     parent:box2,
-    border:'line',
+    // border:'line',
+    // border:{
+    //   type:'line',
+    //   bg:purple,
+    //   fg:purple
+
+
+    // },
     // filled:0,
     // value:0,
     orientation:'horizontal',
-    width: '90%',
-    height: 3,
+    width: 100,
+    height: 2,
     top:'center',
     left:'center',
     keys:true,
     mouse:true,
     padding:0,
     style:{
-      fg:'#f0f0f0',
-      bg:'black',
+      // fg:'#f0f0f0',
+      fg:red,
+      bg:'#f0f0f0',
       bar:{
         fg:'black',
-      bg:'#f0f0f0'
+        bg:red
       },
-      border:{
-        fg:green,
-        // bg:'white',
-        
+      label:{
+        bg:blue,
+        fg:'black'
       }
+      // border:{
+      //   fg:green,
+      //   bg:'white', 
+      // }
     },
+    // label:'time elapsed',
     ch:'',
-    // content:this.fill
+    content:'0%'
     
   })
 
-export let label = blessed.Text({
+export let label = blessed.text({
+  width:'100%',
   parent: progressBar,
-  top: 'center-3',
+  top:'center-2',
   left: 'center',
-  content: 'Elapsed: 00:00 / 00:00', // Placeholder
+  content: '', // Placeholder
   align: 'center',
 });
 
+export let albumCover=blessed.image({
+  parent:menu,
+  bottom:0,
+  left:'center',
+  // file:'./Pictures/2.png',
+  type:'ansi',
+  // height:17,
+  width: 32,
+  height:18,
+  ascii:true
+})
