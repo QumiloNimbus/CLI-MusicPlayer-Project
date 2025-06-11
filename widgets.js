@@ -153,10 +153,10 @@ export let progressBar=blessed.progressbar({
         fg:'black',
         bg:red
       },
-      label:{
-        bg:blue,
-        fg:'black'
-      }
+      // label:{
+      //   bg:blue,
+      //   fg:'black'
+      // }
       // border:{
       //   fg:green,
       //   bg:'white', 
@@ -171,14 +171,107 @@ export let progressBar=blessed.progressbar({
 export let label = blessed.text({
   width:'100%',
   parent: progressBar,
-  top:'center-2',
+  top:-2,
   left: 'center',
-  content: '', // Placeholder
+  content: '',
   align: 'center',
 });
 
+// export let playBackBox=blessed.text({
+//     parent:box2,
+//     bottom: 0,
+//     right: 'center',
+//     width: '60%',
+//     height: 4,
+//     tags: true,
+//     border: {
+//       type: 'line'
+//     },
+//     style: {
+//       fg: '#f0f0f0',
+//       // bg: 'black',
+//       border: {
+//         fg: 'white'
+//       },
+//       hover: {
+//         bg: green
+//       },
+//       // label:{
+//       //   align:'center'
+//       // }
+//     },
+//     label:"Playback"
+    
+// })
+export let previousButton=blessed.button({
+    parent:progressBar,
+    mouse:true,
+    keys:true,
+    shrink:true,
+    content:'Prev',
+    left:'center+40',
+    bottom:-2,
+    style:{
+      bg:red,
+      fg:'black',
+      focus:{
+        bg:'#f0f0f0'
+      },
+      hover:{
+         bg:purple
+      }
+    },
+    width:6,
+    height:1,
+    align:'center'
+})
+export let nextButton=blessed.button({
+    parent:progressBar,
+    mouse:true,
+    keys:true,
+    shrink:true,
+    content:'Next',
+    left:'center+54',
+    bottom:-2,
+    style:{
+      bg:red,
+      fg:'black',
+      focus:{
+        bg:'#f0f0f0'
+      },
+      hover:{
+         bg:purple
+      }
+    },
+    width:6,
+    height:1,
+    align:'center'
+})
+export let PlayButton=blessed.button({
+  parent:progressBar,
+  mouse:true,
+  keys:true,
+  shrink:true,
+  content:'Pause',
+  left:'center',
+  bottom:-2,
+  style:{
+    bg:red,
+      fg:'black',
+      focus:{
+        bg:'#f0f0f0'
+      },
+      hover:{
+         bg:purple
+      }
+  },
+  width:6,
+  height:1,
+  align:'center'
+})
 export let albumCover=blessed.image({
   parent:menu,
+  
   bottom:0,
   left:'center',
   // file:'./Pictures/2.png',
